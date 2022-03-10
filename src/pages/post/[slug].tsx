@@ -42,7 +42,21 @@ export default function Post({ post }: PostProps) {
     return <h1>Carregando...</h1>;
   }
 
-  const readingTime = 4;
+  const totalWords = post.data.content.reduce((acc, content) => {
+    acc += content.heading?.split(/\s+/).length || 0;
+
+    const bodyWords = content.body.map(
+      item => item.text.trim().split(/\s+/).length
+    );
+
+    bodyWords.map(word => (acc += word));
+
+    return acc;
+  }, 0);
+
+  const wordsPerMinute = 200;
+
+  const estimatedReadingTime = Math.ceil(totalWords / wordsPerMinute);
 
   return (
     <>
@@ -71,7 +85,7 @@ export default function Post({ post }: PostProps) {
             <span>{post.data.author}</span>
 
             <FiClock color="#BBBBBB" />
-            <span>{readingTime} min</span>
+            <span>{estimatedReadingTime} min</span>
           </div>
         </header>
 
