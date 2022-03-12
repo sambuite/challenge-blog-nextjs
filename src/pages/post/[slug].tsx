@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { RichText } from 'prismic-dom';
 import { FiCalendar, FiClock, FiUser } from 'react-icons/fi';
@@ -14,6 +15,7 @@ import styles from './post.module.scss';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -29,11 +31,18 @@ interface Post {
   };
 }
 
+type AdjacentPost = {
+  slug: string;
+  title: string;
+};
+
 interface PostProps {
   post: Post;
+  preview: boolean;
+  adjacentPosts: AdjacentPost[];
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({ post, preview, adjacentPosts }: PostProps) {
   const router = useRouter();
 
   if (router.isFallback) {
@@ -85,6 +94,18 @@ export default function Post({ post }: PostProps) {
             <FiClock color="#BBBBBB" />
             <span>{estimatedReadingTime} min</span>
           </div>
+          {post.first_publication_date !== post.last_publication_date && (
+            <span className={styles.editedDate}>
+              * editado em{' '}
+              {format(
+                new Date(post.last_publication_date),
+                "dd MMM yyyy, 'às' HH:mm'h'",
+                {
+                  locale: ptBR,
+                }
+              )}
+            </span>
+          )}
         </header>
 
         <div className={styles.mainContent}>
@@ -101,7 +122,40 @@ export default function Post({ post }: PostProps) {
           ))}
         </div>
       </main>
-      <Comments />
+      <footer className={styles.footer}>
+        <div className={styles.adjacentLinks}>
+          {adjacentPosts?.[0] ? (
+            <Link href={`/post/${adjacentPosts[0].slug}`}>
+              <a>
+                <span className={styles.postTitle}>
+                  {adjacentPosts[0].title}
+                </span>
+                <span className={styles.linkText}>Post anterior</span>
+              </a>
+            </Link>
+          ) : (
+            <a style={{ display: 'none' }} />
+          )}
+          {adjacentPosts?.[1] && (
+            <Link href={`/post/${adjacentPosts[1].slug}`}>
+              <a>
+                <span className={styles.postTitle}>
+                  {adjacentPosts[1].title}
+                </span>
+                <span className={styles.linkText}>Próximo post</span>
+              </a>
+            </Link>
+          )}
+        </div>
+        <Comments />
+        {preview && (
+          <aside>
+            <Link href="/api/exit-preview">
+              <a className={commonStyles.previewButton}>Sair do modo Preview</a>
+            </Link>
+          </aside>
+        )}
+      </footer>
     </>
   );
 }
@@ -126,15 +180,22 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
   const { slug } = params;
 
   const prismic = getPrismicClient();
-  const response = await prismic.getByUID('post', String(slug), {});
+  const response = await prismic.getByUID('post', String(slug), {
+    ref: previewData?.ref ?? null,
+  });
 
   const post = {
     uid: response.uid,
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     data: {
       author: response.data.author,
       banner: response.data.banner,
@@ -144,7 +205,40 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   };
 
+  const nextResponse = await prismic.query(
+    Prismic.Predicates.at('document.type', 'post'),
+    {
+      fetch: ['post.title'],
+      pageSize: 1,
+      after: response?.id,
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
+  const prevResponse = await prismic.query(
+    Prismic.Predicates.at('document.type', 'post'),
+    {
+      fetch: ['post.title'],
+      pageSize: 1,
+      after: response?.id,
+      orderings: '[document.first_publication_date]',
+    }
+  );
+  const nextPost = nextResponse?.results[0]
+    ? {
+        slug: nextResponse?.results[0].uid,
+        title: nextResponse?.results[0].data.title,
+      }
+    : null;
+  const prevPost = prevResponse?.results[0]
+    ? {
+        slug: prevResponse?.results[0].uid,
+        title: prevResponse?.results[0].data.title,
+      }
+    : null;
+
+  const adjacentPosts = [prevPost, nextPost];
+
   return {
-    props: { post },
+    props: { post, preview, adjacentPosts },
   };
 };

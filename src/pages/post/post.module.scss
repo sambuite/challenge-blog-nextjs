@@ -24,7 +24,16 @@
       display: block;
       margin-left: 0.5rem;
       margin-right: 1.125rem;
+      color: var(--gray-200);
     }
+  }
+
+  .editedDate {
+    display: block;
+    margin-top: 1rem;
+    color: var(--gray-200);
+    font-style: italic;
+    font-size: 0.875rem;
   }
 }
 
@@ -70,6 +79,44 @@
       li {
         margin: 0.5rem 0;
       }
+    }
+  }
+}
+
+.footer {
+  max-width: 720px;
+  margin: 0 auto;
+  border-top: 1px solid #d7d7d733;
+  padding-top: 3rem;
+
+  .adjacentLinks {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5rem;
+
+    a {
+      display: flex;
+      flex-direction: column;
+
+      width: 40%;
+
+      &:nth-child(2) {
+        text-align: right;
+        margin-left: auto;
+      }
+    }
+
+    .postTitle {
+      font-size: 1.125rem;
+      color: var(--gray-100);
+      line-height: 1.361;
+    }
+
+    .linkText {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: 0.3rem;
     }
   }
 }

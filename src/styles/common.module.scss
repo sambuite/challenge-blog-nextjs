@@ -2,5 +2,24 @@
   max-width: 720px;
 
   margin: 0 auto;
-  padding: 0 2rem;
+}
+
+.previewButton {
+  display: block;
+  max-width: 720px;
+  background: var(--white);
+  color: var(--background);
+  border-radius: 0.25rem;
+  margin: 5rem auto;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.361rem;
+
+  transition: filter 0.2s;
+
+  &:hover {
+    filter: brightness(0.8);
+  }
 }
